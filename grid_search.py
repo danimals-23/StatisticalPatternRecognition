@@ -2,11 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random 
 from reservoirpy.nodes import Reservoir, Ridge, ESN
+from functools import partial
+from sklearn.model_selection import ParameterGrid
 
-# TODO Test more serieously on data with multiple series.
+from generate_data import multi_series, plot_prediction, multi_harmonic
+
+
 # TODO Implement likleihood.
-def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-7):
+def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
+    Fits an echo state network to a training dataset. 
+
     Inputs:
     - Dataset:        
          - (train, test) Datasets
@@ -53,9 +59,11 @@ def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-7):
 
     return model, Y_test, Y_pred, Y_train, loss
 
-# TODO finish testing. 
+
 def grid_search(dataset, param_grid):
     """
+    Preforms a grid search over lr, sr, ridge parameters, returns optimal values based on log likelihood.
+
     Inputs:
     - Dataset:        
         - (train, test) Datasets
@@ -85,8 +93,14 @@ def grid_search(dataset, param_grid):
 
     # Loop over the grid
     for params in grid:
-        # Call wave_fit with the current parameters
-        result = wave_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
+
+        losses = []
+        for _ in range(3):  # Perform wave_fit three times for robustness
+            result = wave_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
+            losses.append(result[4]) 
+        
+        # Take the median loss value, to handle random initialization
+        loss = np.median(losses)
 
         # If the current loss is lower than the best loss, update the best loss and best parameters
         if result[4] < best_loss:
@@ -95,3 +109,27 @@ def grid_search(dataset, param_grid):
             model, Y_test, Y_pred, Y_train = result[:4]
     return best_params, best_loss, Y_test, Y_pred, Y_train, model
 
+
+f = partial(multi_harmonic, num_harmonics = 1)
+
+dataset =  multi_series(function = f, num_series = 10, train_T = 10, warmup = 1, rate = 300, same_start = False)
+(X_train, Y_train), (X_warmup, Y_test) = dataset
+
+print(X_train.shape, Y_train.shape, X_warmup.shape, Y_test.shape)
+
+#model, Y_test, Y_pred, Y_train, loss = wave_fit(dataset, nodes = 250)
+
+
+param_grid = {
+    'nodes': [350],  
+    #'lr': [0.1, 0.3, 0.7, 1.0],  
+    'lr': [0.5],
+    # 'sr': [0.1, 0.3, 0.7, 1.0],  
+    'sr': [1.0],
+    # 'ridge': [1e-9, 1e-8, 1e-7]  
+    'ridge': [1e-9]  
+}
+
+best_params, best_loss, Y_test, Y_pred, Y_train, model = grid_search(dataset, param_grid)
+
+plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)

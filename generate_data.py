@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random 
+from functools import partial
 
 def single_series(function, T, low, train_T, rate, warmup = .5, forecast = 5, amp_noise = 1, same_start = True):
     """
+    Given an inputted function, generates a single series of data
+
     Inputs:
         - function: function used to generate data 
     
@@ -52,8 +55,10 @@ def single_series(function, T, low, train_T, rate, warmup = .5, forecast = 5, am
 
     return dataset
 
-def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_T = 10, rate = 10, warmup = .5, forecast = 5, amp_noise = 1, same_start = False):
+def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_T = 10, rate = 10, warmup = .5, forecast = 3, amp_noise = 1, same_start = False):
     """
+    Given an input function, generates multiple series of data.
+
     Inputs:
     - function: function used to generate data 
     - num_sets: number of training sets
@@ -99,6 +104,8 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
 
 def multi_harmonic(t, num_harmonics = 5):
     """
+    Generates a multi harmonic function
+
     Inputs: 
     - t:                Generally a linspace of values that we will be evaluating multi harmonic over 
     - num_harmonics:    The number of harmonics we want in the function
@@ -124,6 +131,8 @@ def multi_harmonic(t, num_harmonics = 5):
 
 def plot_train_data(X_train, Y_train, single_series = False, three_series = False, every_series = False):
     """
+    Plots the training data of the ESN
+
     Inputs: 
     - t:                Generally a linspace of values that we will be evaluating multi harmonic over 
     - num_harmonics:    The number of harmonics we want in the function
@@ -167,11 +176,37 @@ def plot_train_data(X_train, Y_train, single_series = False, three_series = Fals
         plt.show()  
         
 
-(X_train, Y_train), (X_warmup, Y_test) = multi_series()
+def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
+    
+    """
+    Plots the predictions against the ground truth for a single time series.
+
+    Parameters:
+        Warmup: Array containing the warmup data.
+        Y_test: Array containing test
+        Y_pred: Array containing the predicted values for the test data.
+        sigma: Standard deviation
+
+    Returns:
+        None: The function only plots the data, no return value.
+    """
 
 
-# TODO: Plot Multi Harmonic 
+
+    warmup_len = Warmup.shape[0]
+
+    warmup_index = range(warmup_len)
+    test_index = range(warmup_len, warmup_len + Y_pred.shape[0])
+
+    plt.figure()  
+    plt.title("Y_test vs Y_pred for single series")
+    plt.xlabel("$t$")
+    plt.ylabel("amplitude")
+    plt.plot(warmup_index, Warmup, label="Warmup", color="blue")
+    plt.plot(test_index, Y_pred, label="Y_pred", color="red")
+    plt.plot(test_index, Y_test, label="Y_test", color="green")
+    plt.legend()
+    plt.show()  
+
+
 # TODO: Figure out why the following function, there always to be convergence at the end.
-plot_train_data(X_train, Y_train,every_series = True)
-
-# TODO: Make a plot test vs prediction w/ warmup (where warmup is different color)
