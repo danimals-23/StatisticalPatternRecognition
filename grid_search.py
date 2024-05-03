@@ -9,9 +9,9 @@ from generate_data import multi_series, plot_prediction, multi_harmonic
 
 
 # TODO Implement likleihood.
-def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
+def wave_forecast(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
-    Fits an echo state network to a training dataset. 
+    Fits an echo state network to a training dataset
 
     Inputs:
     - Dataset:        
@@ -55,9 +55,10 @@ def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
         Y_pred[i] = x
 
     #TODO Change this to likelihood (once we have embedded variance into system)
+    # TODO: Potentially change this to median loss value across the dataset, could give us better results. 
     loss = np.sum(np.square(Y_test - Y_pred))
 
-    return model, Y_test, Y_pred, Y_train, loss
+    return model, Y_test, Y_pred, loss
 
 
 def grid_search(dataset, param_grid):
@@ -97,37 +98,37 @@ def grid_search(dataset, param_grid):
         losses = []
         for _ in range(3):  # Perform wave_fit three times for robustness
             result = wave_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
-            losses.append(result[4]) 
+            losses.append(result[3]) 
         
         # Take the median loss value, to handle random initialization
         loss = np.median(losses)
 
         # If the current loss is lower than the best loss, update the best loss and best parameters
-        if result[4] < best_loss:
-            best_loss = result[4]
+        if result[3] < best_loss:
+            best_loss = result[3]
             best_params = params
-            model, Y_test, Y_pred, Y_train = result[:4]
-    return best_params, best_loss, Y_test, Y_pred, Y_train, model
+            model, Y_test, Y_pred= result[:3]
+    return best_params, best_loss, Y_test, Y_pred, model
 
 
-f = partial(multi_harmonic, num_harmonics = 1)
+f = partial(multi_harmonic, num_harmonics = 5)
 
-dataset =  multi_series(function = f, num_series = 10, train_T = 10, warmup = 1, rate = 300, same_start = False)
+dataset =  multi_series(function = f, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
 (X_train, Y_train), (X_warmup, Y_test) = dataset
 
 print(X_train.shape, Y_train.shape, X_warmup.shape, Y_test.shape)
 
-#model, Y_test, Y_pred, Y_train, loss = wave_fit(dataset, nodes = 250)
+#model, Y_test, Y_pred, Y_train, loss = wave_forecast(dataset, nodes = 250)
 
 
 param_grid = {
-    'nodes': [350],  
+    'nodes': [1500],  
     #'lr': [0.1, 0.3, 0.7, 1.0],  
-    'lr': [0.5],
+    'lr': [0.5, 0.7, 1.0],
     # 'sr': [0.1, 0.3, 0.7, 1.0],  
-    'sr': [1.0],
+    'sr': [.5, 0.7, 1.0],
     # 'ridge': [1e-9, 1e-8, 1e-7]  
-    'ridge': [1e-9]  
+    'ridge': [1e-9, 1e-7]  
 }
 
 best_params, best_loss, Y_test, Y_pred, Y_train, model = grid_search(dataset, param_grid)
