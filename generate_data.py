@@ -196,15 +196,16 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
     warmup_len = Warmup.shape[0]
 
     warmup_index = range(warmup_len)
-    test_index = range(warmup_len, warmup_len + Y_pred.shape[0])
+    index_Pred = range(warmup_len, warmup_len + Y_pred.shape[0])
+    index_test = range(warmup_len, warmup_len + Y_test.shape[0])
 
     plt.figure()  
     plt.title("Y_test vs Y_pred for single series")
     plt.xlabel("$t$")
     plt.ylabel("amplitude")
     plt.plot(warmup_index, Warmup, label="Warmup", color="blue")
-    plt.plot(test_index, Y_pred, label="Y_pred", color="red")
-    plt.plot(test_index, Y_test, label="Y_test", color="green")
+    plt.plot(index_Pred, Y_pred, label="Y_pred", color="red")
+    plt.plot(index_test, Y_test, label="Y_test", color="green")
     plt.legend()
     plt.show()  
 

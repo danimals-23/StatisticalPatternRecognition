@@ -8,7 +8,7 @@ from sklearn.model_selection import ParameterGrid
 from generate_data import multi_series, plot_prediction, multi_harmonic
 
 
-def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
+def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
     Fits an echo state network to a training dataset
 
@@ -48,18 +48,15 @@ def wave_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     return model, X_warmup, Y_test
 
 def t_plus_1(model, X_warmup, Y_test):
-        # * Generate X_test and Y_test from og_Y_test
-        # * Split is up so that everything is over 1 correctly. 
 
     test_points = Y_test.shape[0]
     X_test = Y_test[:test_points - 1]
     Y_test = Y_test[1 : test_points]
 
-
     # Reset model, run it on warmup values
-    warmup_y = model.run(X_warmup, reset=True)
+    model.run(X_warmup, reset=True)
 
-    Y_pred = esn_model.run(X_warmup)
+    Y_pred = model.run(X_test)
 
     # TODO change to log likelihood
     loss = np.sum(np.square(Y_test - Y_pred))
@@ -68,6 +65,10 @@ def t_plus_1(model, X_warmup, Y_test):
 
 
 def forecast(model, X_warmup, Y_test):
+
+    num_forecast = Y_test.shape[0]
+    Y_pred = np.empty((num_forecast,Y_test.shape[1]))
+
     # Reset model, run it on warmup values
     warmup_y = model.run(X_warmup, reset=True)
     x = warmup_y[-1].reshape(1, -1)

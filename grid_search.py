@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import random 
+
+import fit_esn
 from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
@@ -55,13 +56,13 @@ def wave_forecast(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
         Y_pred[i] = x
 
     #TODO Change this to likelihood (once we have embedded variance into system)
-    # TODO: Potentially change this to median loss value across the dataset, could give us better results. 
+    # ?: Potentially change this to median loss value across dataset, could give better results. 
     loss = np.sum(np.square(Y_test - Y_pred))
 
     return model, Y_test, Y_pred, loss
 
 
-def grid_search(dataset, param_grid):
+def grid_search(dataset, param_grid, prediction_task):
     """
     Preforms a grid search over lr, sr, ridge parameters, returns optimal values based on log likelihood.
 
@@ -96,41 +97,48 @@ def grid_search(dataset, param_grid):
     for params in grid:
 
         losses = []
-        for _ in range(3):  # Perform wave_fit three times for robustness
+        for _ in range(3):
+            """
+            Working code: 
+            # Perform wave_fit three times for robustness
             result = wave_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
             losses.append(result[3]) 
+            """
+            # Perform wave_fit three times for robustness
+            model_iter, X_warmup, Y_test = fit_esn.curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
+            _, _, Y_pred_iter, loss_iter = prediction_task(model_iter, X_warmup, Y_test)
+
+            losses.append(loss_iter) 
+
         
         # Take the median loss value, to handle random initialization
         loss = np.median(losses)
 
         # If the current loss is lower than the best loss, update the best loss and best parameters
-        if result[3] < best_loss:
-            best_loss = result[3]
+        if loss < best_loss: # was results [3]
+            best_loss = loss#[3]
             best_params = params
-            model, Y_test, Y_pred= result[:3]
+            model, Y_pred = model_iter, Y_pred_iter
     return best_params, best_loss, Y_test, Y_pred, model
 
 
-f = partial(multi_harmonic, num_harmonics = 5)
+f = partial(multi_harmonic, num_harmonics = 1)
 
 dataset =  multi_series(function = f, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
 (X_train, Y_train), (X_warmup, Y_test) = dataset
 
 print(X_train.shape, Y_train.shape, X_warmup.shape, Y_test.shape)
 
-#model, Y_test, Y_pred, Y_train, loss = wave_forecast(dataset, nodes = 250)
-
-
 param_grid = {
-    'nodes': [1500],  
+    'nodes': [100],  
     #'lr': [0.1, 0.3, 0.7, 1.0],  
-    'lr': [0.5, 0.7, 1.0],
+    'lr': [0.5],
     # 'sr': [0.1, 0.3, 0.7, 1.0],  
-    'sr': [.5, 0.7, 1.0],
+    'sr': [1.0],
     # 'ridge': [1e-9, 1e-8, 1e-7]  
-    'ridge': [1e-9, 1e-7]  
+    'ridge': [1e-7]  
 }
 
-best_params, best_loss, Y_test, Y_pred, Y_train, model = grid_search(dataset, param_grid)
+best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, fit_esn.t_plus_1)
 
 plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
