@@ -203,9 +203,14 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
     plt.title("Y_test vs Y_pred for single series")
     plt.xlabel("$t$")
     plt.ylabel("amplitude")
-    plt.plot(warmup_index, Warmup, label="Warmup", color="blue")
-    plt.plot(index_Pred, Y_pred, label="Y_pred", color="red")
-    plt.plot(index_test, Y_test, label="Y_test", color="green")
+    plt.plot(warmup_index, Warmup, label="Warmup", color="black")
+    plt.plot(index_Pred, Y_pred, label="Y_pred", color="blue")
+    plt.plot(index_test, Y_test, label="Y_test", color="red")
+
+    Y_pred = Y_pred.flatten()
+    # Shaded standard deviation regions
+    plt.fill_between(index_Pred, Y_pred - sigma , Y_pred + sigma, color='blue', alpha=0.2)
+    
     plt.legend()
     plt.show()  
 

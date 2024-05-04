@@ -8,8 +8,6 @@ from scipy import signal
 
 from generate_data import multi_series, plot_prediction, multi_harmonic
 
-
-
 def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
     Fits an echo state network to a training dataset
@@ -34,10 +32,6 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
     # Prep data
     (X_train, Y_train), (X_warmup, Y_test) = dataset
-
-    # Make container for predictions
-    num_forecast = Y_test.shape[0]
-    Y_pred = np.empty((num_forecast,Y_test.shape[1]))
 
     # Make a reservoir and readout, and link them together to make esn
     reservoir = Reservoir(nodes, lr = lr, sr = sr) 
@@ -121,12 +115,7 @@ def grid_search(dataset, param_grid, prediction_task):
 
         losses = []
         for _ in range(3):
-            """
-            Working code: 
-            # Perform wave_fit three times for robustness
-            result = wave_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
-            losses.append(result[3]) 
-            """
+
             # Perform wave_fit three times for robustness
             model_iter, X_warmup, Y_test = curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
             _, _, Y_pred_iter, loss_iter = prediction_task(model_iter, X_warmup, Y_test)
@@ -145,21 +134,21 @@ def grid_search(dataset, param_grid, prediction_task):
     return best_params, best_loss, Y_test, Y_pred, model
 
 
+
+# TESTING CODE
 f = partial(multi_harmonic, num_harmonics = 1)
 
-dataset =  multi_series(function = f, num_series = 100, train_T = 30, warmup = 1, rate = 300, same_start = False)
+dataset =  multi_series(function = signal.sawtooth, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
 (X_train, Y_train), (X_warmup, Y_test) = dataset
-
-print(X_train.shape, Y_train.shape, X_warmup.shape, Y_test.shape)
 
 param_grid = {
     'nodes': [100],  
-    'lr': [0.1, 0.5, 0.7, 1.0],  
-    'sr': [.5 ,0.8, 1.0],  
-    'ridge': [1e-9, 1e-8, 1e-7]  
-
+    #'lr': [0.1, 0.5, 0.7, 1.0],  
+    'lr': [0.1],
+    'sr': [.5] ,
+    #'sr': [.5 ,0.8, 1.0],  
+    'ridge': [1e-9],
+    #'ridge': [1e-9, 1e-8, 1e-7]  
 }
-
-#best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, fit_esn.t_plus_1)
-
-#plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
+best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, t_plus_1)
+plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)

@@ -34,7 +34,7 @@ def f(t, A, v, C):
     noise = g(t, C)
     return (sine_curve + noise)
 
-def constant_noise(t, C):
+def constant_noise(t, C = 1):
     """
         Generates constant Gaussian noise scaled by a constant
     """
@@ -42,7 +42,7 @@ def constant_noise(t, C):
     return noise * C
 
 
-def sine_noise(t, C, x_factor=1.0):
+def sine_noise(t, C = 1, x_factor=1.0):
     """
         Generates sine wave Gaussian noise scaled by a constant.
 
