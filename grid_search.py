@@ -55,6 +55,7 @@ def t_plus_1(model, X_warmup, Y_test):
     Y_pred = model.run(X_test)
 
     # TODO change to log likelihood
+    # loss = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
     loss = np.sum(np.square(Y_test - Y_pred))
 
     return model, Y_test, Y_pred, loss
@@ -74,6 +75,7 @@ def forecast(model, X_warmup, Y_test):
         Y_pred[i] = x
 
     # TODO change to log likelihood
+    # loss = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
     loss = np.sum(np.square(Y_test - Y_pred))
 
     return model, Y_test, Y_pred, loss
@@ -133,6 +135,23 @@ def grid_search(dataset, param_grid, prediction_task):
             model, Y_pred = model_iter, Y_pred_iter
     return best_params, best_loss, Y_test, Y_pred, model
 
+def log_likelihood(Y_pred, sigma, Y_test):
+    """
+        Computes the log-likelihood of the test data given predicted values and
+        standard deviations
+
+        Parameters:
+        - Y_pred : Prediction values
+        - sigma : Standard deviations
+        - Y_test : Test values
+
+        Returns:
+        - Log-likelihood of test data
+
+    """
+    log_likelihoods = -0.5 * np.log(2 * np.pi * sigma**2) - 0.5 * ((Y_test - Y_pred) / sigma)**2
+    log_likelihood = np.sum(log_likelihoods)
+    return log_likelihood
 
 
 # TESTING CODE
