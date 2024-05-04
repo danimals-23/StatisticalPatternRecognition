@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random 
 from functools import partial
+import noise
 
 def single_series(function, T, low, train_T, rate, warmup = .5, forecast = 5, amp_noise = 1, same_start = True):
     """
@@ -93,14 +94,54 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
         X_train[i, :, 0] = dataset[0][0][:, 0]
         Y_train[i, :, 0] = dataset[0][1][:, 0]
 
-        # * Generate the warmup and test data
-        if i == 0:
-            X_warmup = dataset[1][0]
-            Y_test = dataset[1][1]
+    # * Generate the warmup and test data
+    # ! I think test data should be unseen, so this warrants another call of function outside of for loop. 
+    
+    (_, _), (X_warmup, Y_test)  = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
+       
         
     dataset = ((X_train, Y_train), (X_warmup, Y_test))
 
     return dataset
+
+def generate_data(data_function = np.sin, noise_function = noise.sine_noise, config = None):
+    """
+    Given an input function, generates multiple series of data.
+    """
+    if config is None:
+        config = {}
+    
+        # Unpack config dictionary or set default values
+    num_series = config.get('num_series', 5)
+    T = config.get('T', 2*np.pi)
+    low = config.get('low', 0)
+    train_T = config.get('train_T', 10)
+    rate = config.get('rate', 100)
+    warmup = config.get('warmup', 0.5)
+    forecast = config.get('forecast', 3)
+    amp_noise = config.get('amp_noise', .3)
+    same_start = config.get('same_start', False)
+
+    ((X_train, Y_train), (X_warmup, Y_test)) = multi_series(data_function, num_series, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
+
+    # Generate Training Noise
+    train_domain = T * train_T
+    t_values = np.linspace(0, train_domain, Y_train.shape[1])
+    
+    for i in range (num_series):
+        train_noise = noise_function(t_values, amp_noise)
+        Y_train[i,:,:] += train_noise.reshape(-1,1)
+
+    # Generate Test Noise
+    test_domain = T * (warmup +  forecast)
+    test_t_vals = np.linspace(0, test_domain, Y_test.shape[0])  
+    test_noise = noise_function(test_t_vals, amp_noise)
+    Y_test += test_noise.reshape(-1,1)
+    
+    dataset = ((X_train, Y_train), (X_warmup, Y_test))
+
+    return dataset
+
 
 def multi_harmonic(t, num_harmonics = 5):
     """
@@ -147,6 +188,7 @@ def plot_train_data(X_train, Y_train, single_series = False, three_series = Fals
     """
     # Plot X train and Y train of a single series
     if single_series:
+        # ! This one does not have the desired offset, fix at some point. 
         plt.figure()  
         plt.title("X_train vs Y_train for single series")
         plt.xlabel("$t$")
@@ -215,4 +257,3 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
     plt.show()  
 
 
-# TODO: Figure out why the following function, there always to be convergence at the end.

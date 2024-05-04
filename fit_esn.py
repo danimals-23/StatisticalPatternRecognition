@@ -5,7 +5,29 @@ from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
 
-from generate_data import multi_series, plot_prediction, multi_harmonic
+from  generate_data import generate_data, multi_harmonic, plot_train_data
+import noise 
+import grid_search
+
+
+data_config = {
+    'num_series': 10,                  # Number of series to generate (default: 5)
+    'T': 2*np.pi,                     # Period of the function (default: 2*np.pi)
+    'low': 0,                         # Lower bound for the x-axis (default: 0)
+    'train_T': 10,                    # Length of training data (default: 10)
+    'rate': 100,                      # Rate of sampling (default: 100)
+    'warmup': 0.5,                    # Percentage of data to use as warmup (default: 0.5)
+    'forecast': 3,                    # Number of points to forecast (default: 3)
+    'amp_noise': .75,                 # Amplitude of added noise (default: 0.3)
+    'same_start': False               # Whether all series should start at the same point (default: False)
+}
+
+
+data = generate_data(multi_harmonic, noise.sine_noise, data_config)
+
+(X_train, Y_train), (X_warmup, Y_test) = data
+
+plot_train_data(X_train, Y_train, single_series = True)
 
 
 # ? Old code, ignore

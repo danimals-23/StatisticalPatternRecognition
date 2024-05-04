@@ -135,6 +135,7 @@ def grid_search(dataset, param_grid, prediction_task):
             model, Y_pred = model_iter, Y_pred_iter
     return best_params, best_loss, Y_test, Y_pred, model
 
+
 def log_likelihood(Y_pred, sigma, Y_test):
     """
         Computes the log-likelihood of the test data given predicted values and
@@ -154,6 +155,7 @@ def log_likelihood(Y_pred, sigma, Y_test):
     return log_likelihood
 
 
+
 # TESTING CODE
 f = partial(multi_harmonic, num_harmonics = 1)
 
@@ -169,5 +171,5 @@ param_grid = {
     'ridge': [1e-9],
     #'ridge': [1e-9, 1e-8, 1e-7]  
 }
-best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, t_plus_1)
-plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
+#best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, t_plus_1)
+#plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
