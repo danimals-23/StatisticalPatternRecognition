@@ -5,21 +5,32 @@ from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
 
-from  generate_data import generate_data, multi_harmonic, plot_train_data
+from  generate_data import generate_data, multi_harmonic, plot_train_data, plot_prediction
+from train_model import grid_search, t_plus_1, forecast
 import noise 
-import grid_search
+
 
 
 data_config = {
-    'num_series': 10,                  # Number of series to generate (default: 5)
+    'num_series': 50,                  # Number of series to generate (default: 5)
     'T': 2*np.pi,                     # Period of the function (default: 2*np.pi)
     'low': 0,                         # Lower bound for the x-axis (default: 0)
     'train_T': 10,                    # Length of training data (default: 10)
-    'rate': 100,                      # Rate of sampling (default: 100)
-    'warmup': 0.5,                    # Percentage of data to use as warmup (default: 0.5)
+    'rate': 250,                      # Rate of sampling (default: 100)
+    'warmup': 1,                    # Percentage of data to use as warmup (default: 0.5)
     'forecast': 3,                    # Number of points to forecast (default: 3)
-    'amp_noise': .75,                 # Amplitude of added noise (default: 0.3)
+    'amp_noise': .5,                 # Amplitude of added noise (default: 0.3)
     'same_start': False               # Whether all series should start at the same point (default: False)
+}
+
+param_grid = {
+    'nodes': [500],  
+    'lr': [0.1, 0.5, 0.7, 1.0],  
+    #'lr': [0.5],
+   # 'sr': [.5] ,
+    'sr': [.5 ,0.8, 1.0],  
+    #'ridge': [1e-8],
+    'ridge': [1e-9, 1e-8, 1e-7]  
 }
 
 
@@ -28,6 +39,11 @@ data = generate_data(multi_harmonic, noise.sine_noise, data_config)
 (X_train, Y_train), (X_warmup, Y_test) = data
 
 plot_train_data(X_train, Y_train, single_series = True)
+
+best_params, best_loss, Y_test, Y_pred, model = grid_search(data, param_grid, t_plus_1)
+
+
+plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
 
 
 # ? Old code, ignore

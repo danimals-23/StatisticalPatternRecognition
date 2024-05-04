@@ -37,6 +37,8 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     reservoir = Reservoir(nodes, lr = lr, sr = sr) 
     readout = Ridge(ridge = ridge)
     model = reservoir >> readout
+    #model = ESN(reservoir=reservoir, readout=readout, workers=-1)
+
 
     # Train the model
     model.fit(X_train, Y_train)
