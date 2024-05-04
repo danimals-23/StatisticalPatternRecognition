@@ -8,7 +8,8 @@ from sklearn.model_selection import ParameterGrid
 from generate_data import multi_series, plot_prediction, multi_harmonic
 
 
-def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
+# ? Old code, ignore
+def wave_forecast(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
     Fits an echo state network to a training dataset
 
@@ -45,30 +46,6 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     # Train the model
     model.fit(X_train, Y_train)
 
-    return model, X_warmup, Y_test
-
-def t_plus_1(model, X_warmup, Y_test):
-
-    test_points = Y_test.shape[0]
-    X_test = Y_test[:test_points - 1]
-    Y_test = Y_test[1 : test_points]
-
-    # Reset model, run it on warmup values
-    model.run(X_warmup, reset=True)
-
-    Y_pred = model.run(X_test)
-
-    # TODO change to log likelihood
-    loss = np.sum(np.square(Y_test - Y_pred))
-
-    return model, Y_test, Y_pred, loss
-
-
-def forecast(model, X_warmup, Y_test):
-
-    num_forecast = Y_test.shape[0]
-    Y_pred = np.empty((num_forecast,Y_test.shape[1]))
-
     # Reset model, run it on warmup values
     warmup_y = model.run(X_warmup, reset=True)
     x = warmup_y[-1].reshape(1, -1)
@@ -77,7 +54,9 @@ def forecast(model, X_warmup, Y_test):
         x = model(x)
         Y_pred[i] = x
 
-    # TODO change to log likelihood
+    #TODO Change this to likelihood (once we have embedded variance into system)
+    # ?: Potentially change this to median loss value across dataset, could give better results. 
     loss = np.sum(np.square(Y_test - Y_pred))
 
     return model, Y_test, Y_pred, loss
+
