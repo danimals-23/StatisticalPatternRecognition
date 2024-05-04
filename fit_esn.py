@@ -12,7 +12,7 @@ import noise
 
 
 data_config = {
-    'num_series': 50,                  # Number of series to generate (default: 5)
+    'num_series': 100,                  # Number of series to generate (default: 5)
     'T': 2*np.pi,                     # Period of the function (default: 2*np.pi)
     'low': 0,                         # Lower bound for the x-axis (default: 0)
     'train_T': 10,                    # Length of training data (default: 10)
@@ -25,25 +25,25 @@ data_config = {
 
 param_grid = {
     'nodes': [500],  
-    'lr': [0.1, 0.5, 0.7, 1.0],  
-    #'lr': [0.5],
+    #'lr': [0.1, 0.5, 0.7, 1.0],  
+    'lr': [0.5],
    # 'sr': [.5] ,
     'sr': [.5 ,0.8, 1.0],  
-    #'ridge': [1e-8],
-    'ridge': [1e-9, 1e-8, 1e-7]  
+    'ridge': [1e-8],
+    #'ridge': [1e-9, 1e-8, 1e-7]  
 }
+if __name__ == '__main__':
+
+    data = generate_data(multi_harmonic, noise.sine_noise, data_config)
+
+    (X_train, Y_train), (X_warmup, Y_test) = data
+
+    #plot_train_data(X_train, Y_train, single_series = True)
+
+    best_params, best_loss, Y_test, Y_pred, model = grid_search(data, param_grid, t_plus_1)
 
 
-data = generate_data(multi_harmonic, noise.sine_noise, data_config)
-
-(X_train, Y_train), (X_warmup, Y_test) = data
-
-plot_train_data(X_train, Y_train, single_series = True)
-
-best_params, best_loss, Y_test, Y_pred, model = grid_search(data, param_grid, t_plus_1)
-
-
-plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
+    plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
 
 
 # ? Old code, ignore
