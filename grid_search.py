@@ -5,6 +5,7 @@ import fit_esn
 from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
+from scipy import signal
 
 from generate_data import multi_series, plot_prediction, multi_harmonic
 
@@ -124,21 +125,19 @@ def grid_search(dataset, param_grid, prediction_task):
 
 f = partial(multi_harmonic, num_harmonics = 1)
 
-dataset =  multi_series(function = f, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
+dataset =  multi_series(function = f, num_series = 100, train_T = 30, warmup = 1, rate = 300, same_start = False)
 (X_train, Y_train), (X_warmup, Y_test) = dataset
 
 print(X_train.shape, Y_train.shape, X_warmup.shape, Y_test.shape)
 
 param_grid = {
     'nodes': [100],  
-    #'lr': [0.1, 0.3, 0.7, 1.0],  
-    'lr': [0.5],
-    # 'sr': [0.1, 0.3, 0.7, 1.0],  
-    'sr': [1.0],
-    # 'ridge': [1e-9, 1e-8, 1e-7]  
-    'ridge': [1e-7]  
+    'lr': [0.1, 0.5, 0.7, 1.0],  
+    'sr': [.5 ,0.8, 1.0],  
+    'ridge': [1e-9, 1e-8, 1e-7]  
+
 }
 
-best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, fit_esn.t_plus_1)
+#best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, fit_esn.t_plus_1)
 
-plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
+#plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)
