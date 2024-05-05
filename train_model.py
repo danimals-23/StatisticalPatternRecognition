@@ -8,6 +8,8 @@ from scipy import signal
 
 from generate_data import multi_series, plot_prediction, multi_harmonic
 
+#TODO Now implement generate data changes into this file
+
 def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     """
     Fits an echo state network to a training dataset
@@ -31,7 +33,7 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     - Y_train: The training data
     """
     # Prep data
-    (X_train, Y_train), (X_warmup, Y_test) = dataset
+    (X_train, Y_train), validate, test = dataset
 
     # Make a reservoir and readout, and link them together to make esn
     reservoir = Reservoir(nodes, lr = lr, sr = sr) 
@@ -42,13 +44,15 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     #model = reservoir >> readout
     model = ESN(reservoir=reservoir, readout=readout, workers=-1)
 
-
     # Train the model
     model.fit(X_train, Y_train)
 
-    return model, X_warmup, Y_test
+    return model, validate, test
 
-def t_plus_1(model, X_warmup, Y_test):
+def t_plus_1(model, validate, test):
+
+    Val_warmup, Y_validate = validate
+    X_warmup, Y_test = test
 
     test_points = Y_test.shape[0]
     X_test = Y_test[:test_points - 1]
@@ -66,7 +70,9 @@ def t_plus_1(model, X_warmup, Y_test):
     return model, Y_test, Y_pred, loss
 
 
-def forecast(model, X_warmup, Y_test):
+def forecast(model, validate, test):
+    Val_warmup, Y_validate = validate
+    X_warmup, Y_test = test
 
     num_forecast = Y_test.shape[0]
     Y_pred = np.empty((num_forecast,Y_test.shape[1]))
@@ -124,8 +130,8 @@ def grid_search(dataset, param_grid, prediction_task):
         for _ in range(3):
 
             # Perform wave_fit three times for robustness
-            model_iter, X_warmup, Y_test = curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
-            _, _, Y_pred_iter, loss_iter = prediction_task(model_iter, X_warmup, Y_test)
+            model_iter, validate, test = curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
+            _, _, Y_pred_iter, loss_iter = prediction_task(model_iter, validate, test)
 
             losses.append(loss_iter) 
 
@@ -134,8 +140,8 @@ def grid_search(dataset, param_grid, prediction_task):
         loss = np.median(losses)
 
         # If the current loss is lower than the best loss, update the best loss and best parameters
-        if loss < best_loss: # was results [3]
-            best_loss = loss#[3]
+        if loss < best_loss:
+            best_loss = loss
             best_params = params
             model, Y_pred = model_iter, Y_pred_iter
 

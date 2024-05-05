@@ -71,10 +71,11 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
     - same_start:   False means linspace starts at random value in (low, low + T)
 
     Outputs: 
-    - (train, test)
+    - (train, validate ,test)
 
         Where 
         - train = (X_train, Y_train)
+        - validate = (Val_warmup, Y_validate)
         - test = (X_warmup, Y_test)
     """
     num_points = rate * train_T
@@ -85,11 +86,9 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
     # Train
     X_train = np.zeros((num_series, num_points - 1, 1))
     Y_train = np.zeros((num_series, num_points - 1, 1))
-
     # Validation
     Val_warmup = np.zeros((num_series, warmup_points, 1))
-    Y_validation = np.zeros((num_series, num_forecast, 1))
-
+    Y_validate = np.zeros((num_series, num_forecast, 1))
     # Test
     X_warmup = np.zeros((warmup_points, 1))
     Y_test = np.zeros((num_forecast, 1))
@@ -105,15 +104,17 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
         # Valdiation Data 
         dataset = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
         Val_warmup[i, :, 0] = dataset[1][0][:, 0]
-        Y_validation[i, :, 0] = dataset[1][0][:, 0]
-
+        Y_validate[i, :, 0] = dataset[1][1][:, 0]
 
     #  Generate the test data
     (_, _), (X_warmup, Y_test)  = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
-       
-    dataset = ((X_train, Y_train), (X_warmup, Y_test))
 
-    return dataset
+    train = (X_train, Y_train)
+    validate = (Val_warmup, Y_validate)
+    test = (X_warmup, Y_test)
+
+    # dataset = ((X_train, Y_train),(Val_warmup, Y_validate) ,(X_warmup, Y_test))
+    return train, validate, test 
 
 def generate_data(data_function = np.sin, noise_function = noise.sine_noise, config = None):
     """
@@ -122,7 +123,7 @@ def generate_data(data_function = np.sin, noise_function = noise.sine_noise, con
     if config is None:
         config = {}
     
-        # Unpack config dictionary or set default values
+    # Unpack config dictionary or set default values
     num_series = config.get('num_series', 5)
     T = config.get('T', 2*np.pi)
     low = config.get('low', 0)
@@ -133,25 +134,38 @@ def generate_data(data_function = np.sin, noise_function = noise.sine_noise, con
     amp_noise = config.get('amp_noise', .3)
     same_start = config.get('same_start', False)
 
-    ((X_train, Y_train), (X_warmup, Y_test)) = multi_series(data_function, num_series, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
+    train, validate, test = multi_series(data_function, num_series, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
 
-    # Generate Training Noise
-    train_domain = T * train_T
-    t_values = np.linspace(0, train_domain, Y_train.shape[1])
-    
-    for i in range (num_series):
-        train_noise = noise_function(t_values, amp_noise)
-        Y_train[i,:,:] += train_noise.reshape(-1,1)
+    # unpack 
+    X_train, Y_train = train
+    Val_warmup, Y_validate = validate
+    X_warmup, Y_test = test
 
     # Generate Test Noise
     test_domain = T * (warmup +  forecast)
     test_t_vals = np.linspace(0, test_domain, Y_test.shape[0])  
     test_noise = noise_function(test_t_vals, amp_noise)
     Y_test += test_noise.reshape(-1,1)
-    
-    dataset = ((X_train, Y_train), (X_warmup, Y_test))
 
-    return dataset
+    # Generate Training, Validation Noise
+    train_domain = T * train_T
+    t_values = np.linspace(0, train_domain, Y_train.shape[1])
+    
+    for i in range (num_series):
+        # Train Noise
+        train_noise = noise_function(t_values, amp_noise)
+        Y_train[i,:,:] += train_noise.reshape(-1,1)
+
+        # Validation Noise
+        val_noise = noise_function(test_t_vals, amp_noise)
+        Y_validate[i,:,:] += val_noise.reshape(-1,1)
+
+    train = (X_train, Y_train)
+    validate = (Val_warmup, Y_validate)
+    test = (X_warmup, Y_test)
+
+    # dataset = ((X_train, Y_train),(Val_warmup, Y_validate) ,(X_warmup, Y_test))
+    return train, validate, test 
 
 
 def multi_harmonic(t, num_harmonics = 5):
@@ -266,5 +280,3 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
     
     plt.legend()
     plt.show()  
-
-
