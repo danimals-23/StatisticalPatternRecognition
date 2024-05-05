@@ -98,4 +98,3 @@ def wave_forecast(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     loss = np.sum(np.square(Y_test - Y_pred))
 
     return model, Y_test, Y_pred, loss
-
