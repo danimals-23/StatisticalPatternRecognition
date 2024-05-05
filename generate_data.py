@@ -46,8 +46,6 @@ def single_series(function, T, low, train_T, rate, warmup = .5, forecast = 5, am
     X_train = X[:num_points - 1]
     Y_train = X[1:]
 
-    # TODO Add noise to Y
-
     # Create the warmup and test data
     X_warmup = X_train[:warmup_points]
     Y_test = X_train[warmup_points: warmup_points + forecast_points]
@@ -83,23 +81,36 @@ def multi_series(function = np.sin, num_series = 5, T = 2*np.pi, low = 0, train_
     warmup_points = int(np.round(warmup * rate))
     num_forecast = forecast * rate 
 
-    # * Make containers, 1 dim for now
+    # * Make containers to store the data
+    # Train
     X_train = np.zeros((num_series, num_points - 1, 1))
     Y_train = np.zeros((num_series, num_points - 1, 1))
+
+    # Validation
+    Val_warmup = np.zeros((num_series, warmup_points, 1))
+    Y_validation = np.zeros((num_series, num_forecast, 1))
+
+    # Test
     X_warmup = np.zeros((warmup_points, 1))
     Y_test = np.zeros((num_forecast, 1))
 
+    # Generate Training, Validation data 
     for i in range (num_series):
+
+        # Training data 
         dataset = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
         X_train[i, :, 0] = dataset[0][0][:, 0]
         Y_train[i, :, 0] = dataset[0][1][:, 0]
 
-    # * Generate the warmup and test data
-    # ! I think test data should be unseen, so this warrants another call of function outside of for loop. 
-    
+        # Valdiation Data 
+        dataset = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
+        Val_warmup[i, :, 0] = dataset[1][0][:, 0]
+        Y_validation[i, :, 0] = dataset[1][0][:, 0]
+
+
+    #  Generate the test data
     (_, _), (X_warmup, Y_test)  = single_series(function, T, low, train_T, rate, warmup, forecast, amp_noise, same_start)
        
-        
     dataset = ((X_train, Y_train), (X_warmup, Y_test))
 
     return dataset

@@ -12,11 +12,11 @@ import noise
 
 
 data_config = {
-    'num_series': 100,                  # Number of series to generate (default: 5)
+    'num_series': 250,                  # Number of series to generate (default: 5)
     'T': 2*np.pi,                     # Period of the function (default: 2*np.pi)
     'low': 0,                         # Lower bound for the x-axis (default: 0)
-    'train_T': 10,                    # Length of training data (default: 10)
-    'rate': 250,                      # Rate of sampling (default: 100)
+    'train_T': 20,                    # Length of training data (default: 10)
+    'rate': 300,                      # Rate of sampling (default: 100)
     'warmup': 1,                    # Percentage of data to use as warmup (default: 0.5)
     'forecast': 3,                    # Number of points to forecast (default: 3)
     'amp_noise': .5,                 # Amplitude of added noise (default: 0.3)
@@ -24,12 +24,12 @@ data_config = {
 }
 
 param_grid = {
-    'nodes': [500],  
+    'nodes': [1000],  
     #'lr': [0.1, 0.5, 0.7, 1.0],  
-    'lr': [0.5],
+    'lr': [0.1, 0.5, 0.7, 1.0],
    # 'sr': [.5] ,
     'sr': [.5 ,0.8, 1.0],  
-    'ridge': [1e-8],
+    'ridge': [1e-9, 1e-8, 1e-7],
     #'ridge': [1e-9, 1e-8, 1e-7]  
 }
 if __name__ == '__main__':

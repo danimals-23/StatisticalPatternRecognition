@@ -36,9 +36,10 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     # Make a reservoir and readout, and link them together to make esn
     reservoir = Reservoir(nodes, lr = lr, sr = sr) 
     readout = Ridge(ridge = ridge)
-    #model = reservoir >> readout
+    
 
     # ! This paralellizes the code, remove if you want to run model outsite of the if statement in train_model
+    #model = reservoir >> readout
     model = ESN(reservoir=reservoir, readout=readout, workers=-1)
 
 
@@ -137,6 +138,7 @@ def grid_search(dataset, param_grid, prediction_task):
             best_loss = loss#[3]
             best_params = params
             model, Y_pred = model_iter, Y_pred_iter
+
     return best_params, best_loss, Y_test, Y_pred, model
 
 
