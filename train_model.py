@@ -144,6 +144,8 @@ def grid_search(dataset, param_grid, prediction_task):
             best_loss = loss
             best_params = params
             model, Y_pred = model_iter, Y_pred_iter
+    
+    Y_test = test[1]
 
     return best_params, best_loss, Y_test, Y_pred, model
 
@@ -172,7 +174,7 @@ def log_likelihood(Y_pred, sigma, Y_test):
 f = partial(multi_harmonic, num_harmonics = 1)
 
 dataset =  multi_series(function = signal.sawtooth, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
-(X_train, Y_train), (X_warmup, Y_test) = dataset
+train, validate, test = dataset
 
 param_grid = {
     'nodes': [100],  
