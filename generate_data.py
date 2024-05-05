@@ -243,7 +243,7 @@ def plot_train_data(X_train, Y_train, single_series = False, three_series = Fals
         plt.show()  
         
 
-def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
+def plot_prediction(Warmup, Y_test, Y_pred, sigma):
     
     """
     Plots the predictions against the ground truth for a single time series.
@@ -258,8 +258,6 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
         None: The function only plots the data, no return value.
     """
 
-
-
     warmup_len = Warmup.shape[0]
 
     warmup_index = range(warmup_len)
@@ -271,12 +269,14 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma = 1):
     plt.xlabel("$t$")
     plt.ylabel("amplitude")
     plt.plot(warmup_index, Warmup, label="Warmup", color="black")
-    plt.plot(index_Pred, Y_pred, label="Y_pred", color="blue")
     plt.plot(index_test, Y_test, label="Y_test", color="red")
+    plt.plot(index_Pred, Y_pred, label="Y_pred", color="blue")
+    
 
     Y_pred = Y_pred.flatten()
+    sigma = sigma.flatten()
     # Shaded standard deviation regions
-    plt.fill_between(index_Pred, Y_pred - sigma , Y_pred + sigma, color='blue', alpha=0.2)
+    plt.fill_between(index_Pred, Y_pred - 3 * sigma , Y_pred + 3 * sigma, color='blue', alpha=0.2)
     
     plt.legend()
     plt.show()  
