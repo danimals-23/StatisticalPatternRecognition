@@ -119,6 +119,7 @@ def base_sigma_forecast(model, validate):
     return sigma_vec    
 
 
+# TODO Finish fix, still error in this code. 
 def upgrade_sigma_forecast(model, validate):
 
     Val_warmup, Y_validate = validate
@@ -136,14 +137,13 @@ def upgrade_sigma_forecast(model, validate):
         for i in range(num_forecast):
                 x = model(x)
                 Val_pred[i] = x
+
+        sigma += (Val_pred - Y_validate[series, :, :])**2
     
     sigma /= num_series
     sigma = np.sqrt(sigma)
 
-    # Skipping the first value of sigma to align shapes
     return sigma
-
-
 
 
 def t_plus_1(model, validate, test, upgrade = False):
@@ -164,10 +164,10 @@ def t_plus_1(model, validate, test, upgrade = False):
 
     Y_pred = model.run(X_test)
 
-    loss = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
+    log_lik = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
     # loss = np.mean((Y_test - Y_pred) ** 2)
 
-    return model, Y_test, Y_pred, loss, sigma
+    return model, Y_test, Y_pred, log_lik, sigma
 
 
 def forecast(model, validate, test, upgrade = False):
@@ -190,11 +190,11 @@ def forecast(model, validate, test, upgrade = False):
         x = model(x)
         Y_pred[i] = x
 
-    # TODO change to log likelihood
-    # loss = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
-    loss = np.sum(np.square(Y_test - Y_pred))
+    
+    log_lik = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
+    #loss = np.sum(np.square(Y_test - Y_pred))
 
-    return model, Y_test, Y_pred, loss, sigma
+    return model, Y_test, Y_pred, log_lik, sigma
 
 
 def grid_search(dataset, param_grid, prediction_task, save_file, upgrade = False):
@@ -218,37 +218,37 @@ def grid_search(dataset, param_grid, prediction_task, save_file, upgrade = False
                 -'nodes'    # Nodes
 
     Returns:
-    - results: best_params, best_loss, Y_test, Y_pred, Y_train, model
+    - results: best_params, best_log_lik, Y_test, Y_pred, Y_train, model
     """
 
     # Create a grid of parameters to try
     grid = ParameterGrid(param_grid)
 
-    # Initialize the best loss to a very large number and best_params to None
+    # Initialize the best log_lik to a very large number and best_params to None
     # ? best_loss = float('inf')
-    best_loss = float('-inf')
+    best_log_lik = float('-inf')
     best_params = None
 
     # Loop over the grid
     for params in grid:
 
-        losses = []
+        log_likes = []
         for _ in range(3):
 
             # Perform wave_fit three times for robustness
             model_iter, validate, test = curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
-            _, _, Y_pred_iter, loss_iter, sigma_iter = prediction_task(model_iter, validate, test, upgrade)
+            _, _, Y_pred_iter, log_lik_iter, sigma_iter = prediction_task(model_iter, validate, test, upgrade)
 
-            losses.append(loss_iter) 
+            log_likes.append(log_lik_iter) 
 
         
-        # Take the median loss value, to handle random initialization
-        loss = np.median(losses)
+        # Take the median log_lik value, to handle random initialization
+        log_lik = np.median(log_likes)
 
-        # If the current loss is lower than the best loss, update the best loss and best parameters
+        # If the current log_lik is lower than the best log_lik, update the best log_lik and best parameters
         #if loss < best_loss:
-        if loss > best_loss:
-            best_loss = loss
+        if log_lik > best_log_lik:
+            best_log_lik = log_lik
             best_params = params
             model, Y_pred, sigma = model_iter, Y_pred_iter, sigma_iter
     
@@ -256,7 +256,7 @@ def grid_search(dataset, param_grid, prediction_task, save_file, upgrade = False
     
     results = {
         'best_params': best_params,
-        'best_loss': best_loss,
+        'best_log_lik': best_log_lik,
         'Y_test': Y_test,
         'Y_pred': Y_pred,
         'model': model,
@@ -267,7 +267,7 @@ def grid_search(dataset, param_grid, prediction_task, save_file, upgrade = False
         pickle.dump(results, f)
     
 
-    return best_params, best_loss, Y_test, Y_pred, model, sigma
+    return best_params, best_log_lik, Y_test, Y_pred, model, sigma
 
 
 def log_likelihood(Y_pred, sigma, Y_test):
@@ -287,23 +287,3 @@ def log_likelihood(Y_pred, sigma, Y_test):
     log_likelihoods = -0.5 * np.log(2 * np.pi * sigma**2) - 0.5 * ((Y_test - Y_pred) / sigma)**2
     log_likelihood = np.sum(log_likelihoods)
     return log_likelihood
-
-
-
-# TESTING CODE
-f = partial(multi_harmonic, num_harmonics = 1)
-
-dataset =  multi_series(function = signal.sawtooth, num_series = 1, train_T = 30, warmup = 1, rate = 300, same_start = False)
-train, validate, test = dataset
-
-param_grid = {
-    'nodes': [100],  
-    #'lr': [0.1, 0.5, 0.7, 1.0],  
-    'lr': [0.1],
-    'sr': [.5] ,
-    #'sr': [.5 ,0.8, 1.0],  
-    'ridge': [1e-9],
-    #'ridge': [1e-9, 1e-8, 1e-7]  
-}
-#best_params, best_loss, Y_test, Y_pred, model = grid_search(dataset, param_grid, t_plus_1)
-#plot_prediction(X_warmup, Y_test, Y_pred, sigma = 1)

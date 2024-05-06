@@ -26,7 +26,7 @@ data_config = {
 }
 
 param_grid = {
-    'nodes': [30],  
+    'nodes': [100],  
     #'lr': [0.5, 0.7, 1.0],  
     'lr': [0.5],
     #'sr': [.8] ,
@@ -54,7 +54,7 @@ if __name__ == '__main__':
         with open(save_file, 'rb') as f:
             grid_search_results = pickle.load(f)
         best_params = grid_search_results['best_params']
-        best_loss = grid_search_results['best_loss']
+        best_log_lik = grid_search_results['best_log_lik']
         Y_test = grid_search_results['Y_test']
         Y_pred = grid_search_results['Y_pred']
         model = grid_search_results['model']
@@ -62,10 +62,10 @@ if __name__ == '__main__':
         print("Loaded grid search results from file.")
     except FileNotFoundError:
         print("Running grid search...")
-        best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file)
+        best_params, best_log_lik, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, forecast, save_file, True)
         print("Grid search completed and results saved.")
 
 
     ((X_train, Y_train),(Val_warmup, Y_validate),(X_warmup, Y_test)) = data
     plot_prediction(X_warmup, Y_test, Y_pred, sigma)
-    print(best_loss)
+    print(best_log_lik)
