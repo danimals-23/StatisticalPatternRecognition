@@ -38,7 +38,6 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
     reservoir = Reservoir(nodes, lr = lr, sr = sr) 
     readout = Ridge(ridge = ridge)
     
-
     # ! This paralellizes the code, remove if you want to run model outsite of the if statement in train_model
     #model = reservoir >> readout
     model = ESN(reservoir=reservoir, readout=readout, workers=-1)
@@ -64,6 +63,8 @@ def base_sigma_t_plus_1(model, validate):
         sigma += np.sum((Val_pred - Y_validate[series, :,:])**2)
 
     sigma /= N
+    sigma = np.sqrt(sigma)
+
     sigma_vec = np.ones((Y_validate.shape[1] - 1 ,1)) * sigma
 
     return sigma_vec
@@ -83,6 +84,7 @@ def upgrade_sigma_t_plus_1(model, validate):
         sigma += (Val_pred - Y_validate[series, :,:])**2
 
     sigma /= num_series
+    sigma = np.sqrt(sigma)
 
     # Skipping the first value of sigma to align shapes
     return sigma[1:]
@@ -110,6 +112,8 @@ def base_sigma_forecast(model, validate):
         sigma += np.sum((Val_pred - Y_validate[series, :,:])**2)
     
     sigma /= N
+    sigma = np.sqrt(sigma)
+
     sigma_vec = np.ones((Y_validate.shape[1] ,1)) * sigma
 
     return sigma_vec    
@@ -119,14 +123,35 @@ def upgrade_sigma_forecast(model, validate):
 
     Val_warmup, Y_validate = validate
 
+    num_series = Y_validate.shape[0]
+    num_forecast = Y_validate.shape[1]
+    sigma = np.zeros((Y_validate.shape[1],1))
 
-    return 0
+    for series in range (num_series):
+        # Reset model, run it on warmup values
+        Val_pred = np.zeros((num_forecast,1))
+        warmup_y = model.run(Val_warmup[series,:,:], reset=True)
+        x = warmup_y[-1].reshape(1, -1)
+
+        for i in range(num_forecast):
+                x = model(x)
+                Val_pred[i] = x
+    
+    sigma /= num_series
+    sigma = np.sqrt(sigma)
+
+    # Skipping the first value of sigma to align shapes
+    return sigma
 
 
 
-def t_plus_1(model, validate, test):
 
-    sigma = upgrade_sigma_t_plus_1(model, validate)
+def t_plus_1(model, validate, test, upgrade = False):
+
+    if upgrade:
+        sigma = upgrade_sigma_t_plus_1(model, validate)
+    else:
+        sigma = base_sigma_t_plus_1(model, validate)
 
     X_warmup, Y_test = test
 
@@ -140,13 +165,17 @@ def t_plus_1(model, validate, test):
     Y_pred = model.run(X_test)
 
     loss = log_likelihood(Y_pred=Y_pred, sigma=np.full_like(Y_pred, 1), Y_test=Y_test)
+    # loss = np.mean((Y_test - Y_pred) ** 2)
 
     return model, Y_test, Y_pred, loss, sigma
 
 
-def forecast(model, validate, test):
+def forecast(model, validate, test, upgrade = False):
 
-    sigma = base_sigma_forecast(model,validate)
+    if upgrade:
+        sigma = upgrade_sigma_forecast(model, validate)
+    else:
+        sigma = base_sigma_forecast(model,validate)
 
     X_warmup, Y_test = test
 
@@ -168,7 +197,7 @@ def forecast(model, validate, test):
     return model, Y_test, Y_pred, loss, sigma
 
 
-def grid_search(dataset, param_grid, prediction_task, save_file):
+def grid_search(dataset, param_grid, prediction_task, save_file, upgrade = False):
     """
     Preforms a grid search over lr, sr, ridge parameters, returns optimal values based on log likelihood.
 
@@ -196,7 +225,8 @@ def grid_search(dataset, param_grid, prediction_task, save_file):
     grid = ParameterGrid(param_grid)
 
     # Initialize the best loss to a very large number and best_params to None
-    best_loss = float('inf')
+    # ? best_loss = float('inf')
+    best_loss = float('-inf')
     best_params = None
 
     # Loop over the grid
@@ -207,7 +237,7 @@ def grid_search(dataset, param_grid, prediction_task, save_file):
 
             # Perform wave_fit three times for robustness
             model_iter, validate, test = curve_fit(dataset, nodes=params['nodes'], lr=params['lr'], sr=params['sr'], ridge=params['ridge'])
-            _, _, Y_pred_iter, loss_iter, sigma_iter = prediction_task(model_iter, validate, test)
+            _, _, Y_pred_iter, loss_iter, sigma_iter = prediction_task(model_iter, validate, test, upgrade)
 
             losses.append(loss_iter) 
 
@@ -216,7 +246,8 @@ def grid_search(dataset, param_grid, prediction_task, save_file):
         loss = np.median(losses)
 
         # If the current loss is lower than the best loss, update the best loss and best parameters
-        if loss < best_loss:
+        #if loss < best_loss:
+        if loss > best_loss:
             best_loss = loss
             best_params = params
             model, Y_pred, sigma = model_iter, Y_pred_iter, sigma_iter

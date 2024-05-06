@@ -14,7 +14,7 @@ from scipy import signal
 
 
 data_config = {
-    'num_series': 1,                  # Number of series to generate (default: 5)
+    'num_series': 10,                  # Number of series to generate (default: 5)
     'T': 2*np.pi,                     # Period of the function (default: 2*np.pi)
     'low': 0,                         # Lower bound for the x-axis (default: 0)
     'train_T': 20,                    # Length of training data (default: 10)
@@ -26,13 +26,13 @@ data_config = {
 }
 
 param_grid = {
-    'nodes': [100],  
+    'nodes': [30],  
     #'lr': [0.5, 0.7, 1.0],  
     'lr': [0.5],
-    'sr': [.8] ,
-    #'sr': [.5 ,0.8, 1.0],  
-    #'ridge': [1e-7],
-    'ridge': [1e-9, 1e-7]  
+    #'sr': [.8] ,
+    'sr': [.5 ,0.8, 1.0],  
+    'ridge': [1e-7],
+    #'ridge': [1e-9, 1e-8 ,1e-7]  
 }
 if __name__ == '__main__':
 
@@ -65,17 +65,7 @@ if __name__ == '__main__':
         best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file)
         print("Grid search completed and results saved.")
 
-    
-
-
 
     ((X_train, Y_train),(Val_warmup, Y_validate),(X_warmup, Y_test)) = data
-
-    #plot_train_data(X_train, Y_train, single_series = True)
-
-    # best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, forecast)
-
-    # print(best_params)
-
     plot_prediction(X_warmup, Y_test, Y_pred, sigma)
-
+    print(best_loss)

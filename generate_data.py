@@ -276,7 +276,7 @@ def plot_prediction(Warmup, Y_test, Y_pred, sigma):
     Y_pred = Y_pred.flatten()
     sigma = sigma.flatten()
     # Shaded standard deviation regions
-    plt.fill_between(index_Pred, Y_pred - 3 * sigma , Y_pred + 3 * sigma, color='blue', alpha=0.2)
+    plt.fill_between(index_Pred, Y_pred - 3 * sigma , Y_pred + 3 * sigma, color='blue', alpha=0.2, label="3sigma")
     
     plt.legend()
     plt.show()  
