@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random 
+import pickle
 from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
@@ -36,11 +37,32 @@ if __name__ == '__main__':
 
     data = generate_data(np.sin, noise.sine_noise, data_config)
 
+    # make new filename if running a new test
+    save_file = 'grid_search_results.pkl'
+
+    # check if the saved file exists
+    try:
+        with open(save_file, 'rb') as f:
+            grid_search_results = pickle.load(f)
+        best_params = grid_search_results['best_params']
+        best_loss = grid_search_results['best_loss']
+        Y_test = grid_search_results['Y_test']
+        Y_pred = grid_search_results['Y_pred']
+        model = grid_search_results['model']
+        sigma = grid_search_results['sigma']
+        print("Loaded grid search results from file.")
+    except FileNotFoundError:
+        print("Running grid search...")
+        best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file)
+        print("Grid search completed and results saved.")
+
+
+
     ((X_train, Y_train),(Val_warmup, Y_validate),(X_warmup, Y_test)) = data
 
     #plot_train_data(X_train, Y_train, single_series = True)
 
-    best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, forecast)
+    # best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, forecast)
 
     # print(best_params)
 
