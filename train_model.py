@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
 from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
@@ -220,6 +221,18 @@ def grid_search(dataset, param_grid, prediction_task):
             best_loss = loss
             best_params = params
             model, Y_pred, sigma = model_iter, Y_pred_iter, sigma_iter
+    
+    results = {
+        'best_params': best_params,
+        'best_loss': best_loss,
+        'Y_test': Y_test,
+        'Y_pred': Y_pred,
+        'model': model,
+        'sigma': sigma
+    }
+
+    with open(save_file, 'wb') as f:
+        pickle.dump(results, f)
     
     Y_test = test[1]
 
