@@ -124,7 +124,6 @@ def upgrade_sigma_forecast(model, validate):
 
 
 
-
 def t_plus_1(model, validate, test):
 
     sigma = upgrade_sigma_t_plus_1(model, validate)
@@ -169,7 +168,7 @@ def forecast(model, validate, test):
     return model, Y_test, Y_pred, loss, sigma
 
 
-def grid_search(dataset, param_grid, prediction_task):
+def grid_search(dataset, param_grid, prediction_task, save_file):
     """
     Preforms a grid search over lr, sr, ridge parameters, returns optimal values based on log likelihood.
 
@@ -222,6 +221,8 @@ def grid_search(dataset, param_grid, prediction_task):
             best_params = params
             model, Y_pred, sigma = model_iter, Y_pred_iter, sigma_iter
     
+    Y_test = test[1]
+    
     results = {
         'best_params': best_params,
         'best_loss': best_loss,
@@ -234,7 +235,6 @@ def grid_search(dataset, param_grid, prediction_task):
     with open(save_file, 'wb') as f:
         pickle.dump(results, f)
     
-    Y_test = test[1]
 
     return best_params, best_loss, Y_test, Y_pred, model, sigma
 

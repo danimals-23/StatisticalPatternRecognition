@@ -5,6 +5,7 @@ import pickle
 from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
+import os
 
 from  generate_data import generate_data, multi_harmonic, plot_train_data, plot_prediction
 from train_model import grid_search, t_plus_1, forecast
@@ -26,10 +27,10 @@ data_config = {
 
 param_grid = {
     'nodes': [100],  
-    'lr': [0.5, 0.7, 1.0],  
-    #'lr': [0.5],
-    #'sr': [.8] ,
-    'sr': [.5 ,0.8, 1.0],  
+    #'lr': [0.5, 0.7, 1.0],  
+    'lr': [0.5],
+    'sr': [.8] ,
+    #'sr': [.5 ,0.8, 1.0],  
     #'ridge': [1e-7],
     'ridge': [1e-9, 1e-7]  
 }
@@ -38,7 +39,15 @@ if __name__ == '__main__':
     data = generate_data(np.sin, noise.sine_noise, data_config)
 
     # make new filename if running a new test
-    save_file = 'grid_search_results.pkl'
+    # save_file = 'grid_search_results.pkl'
+
+    # Make new filename if running a new test
+    save_file = 'results/grid_search_results.pkl'
+
+    # Create directories if they don't exist
+    save_dir = os.path.dirname(save_file)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
     # check if the saved file exists
     try:
@@ -56,6 +65,8 @@ if __name__ == '__main__':
         best_params, best_loss, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file)
         print("Grid search completed and results saved.")
 
+    
+
 
 
     ((X_train, Y_train),(Val_warmup, Y_validate),(X_warmup, Y_test)) = data
@@ -68,55 +79,3 @@ if __name__ == '__main__':
 
     plot_prediction(X_warmup, Y_test, Y_pred, sigma)
 
-
-# ? Old code, ignore
-def wave_forecast(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
-    """
-    Fits an echo state network to a training dataset
-
-    Inputs:
-    - Dataset:        
-         - (train, test) Datasets
-        Where 
-            - train = (X_train, Y_train)
-            - test = (X_warmup, Y_test)
-
-    Parameters: 
-    - nodes: # Nodes in reservoir
-    - lr: The learning rate of the reservoir
-    - sr: The spectral radius of the reservoir
-    - ridge: The ridge of the readout
-
-    Returns:
-    - Y_test: The test data
-    - Y_pred: The predicted data
-    - Y_train: The training data
-    """
-    # Prep data
-    (X_train, Y_train), (X_warmup, Y_test) = dataset
-
-    # Make container for predictions
-    num_forecast = Y_test.shape[0]
-    Y_pred = np.empty((num_forecast,Y_test.shape[1]))
-
-    # Make a reservoir and readout, and link them together to make esn
-    reservoir = Reservoir(nodes, lr = lr, sr = sr) 
-    readout = Ridge(ridge = ridge)
-    model = reservoir >> readout
-
-    # Train the model
-    model.fit(X_train, Y_train)
-
-    # Reset model, run it on warmup values
-    warmup_y = model.run(X_warmup, reset=True)
-    x = warmup_y[-1].reshape(1, -1)
-
-    for i in range(num_forecast):
-        x = model(x)
-        Y_pred[i] = x
-
-    #TODO Change this to likelihood (once we have embedded variance into system)
-    # ?: Potentially change this to median loss value across dataset, could give better results. 
-    loss = np.sum(np.square(Y_test - Y_pred))
-
-    return model, Y_test, Y_pred, loss
