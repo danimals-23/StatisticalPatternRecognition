@@ -1,1 +1,11 @@
 README
+
+Test File Naming: 
+    results/fsin_nsin_amp3_ssF_for_up.pkl
+
+    - fsin --> function = sin
+    - nsin --> noise func = sin
+    - amp3 --> aplitude of noise .3
+    - ssF  --> same start = false 
+    - for  --> forcasting 
+    - up   --> upgrade 

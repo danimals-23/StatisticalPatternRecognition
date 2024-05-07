@@ -6,6 +6,7 @@ from reservoirpy.nodes import Reservoir, Ridge, ESN
 from functools import partial
 from sklearn.model_selection import ParameterGrid
 from scipy import signal
+from concurrent.futures import ProcessPoolExecutor
 
 from generate_data import multi_series, multi_harmonic
 
@@ -47,7 +48,18 @@ def curve_fit(dataset, nodes = 100, lr = .5, sr = .9, ridge = 1e-8):
 
     return model, validate, test
 
+
 def base_sigma_t_plus_1(model, validate):
+    """
+    Produces a constant sigma vector for the t_plus_1 prediction 
+
+    Inputs 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+
+    Outputs:
+    - Constant Sigma Vector
+    """
 
     Val_warmup, Y_validate = validate
 
@@ -70,6 +82,16 @@ def base_sigma_t_plus_1(model, validate):
     return sigma_vec
 
 def upgrade_sigma_t_plus_1(model, validate):
+    """
+    Produces a time dependent sigma vector for the t_plus_1 prediction 
+
+    Inputs 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+
+    Outputs:
+    - Time dependent Sigma Vector
+    """
 
     Val_warmup, Y_validate = validate
 
@@ -91,7 +113,16 @@ def upgrade_sigma_t_plus_1(model, validate):
 
 
 def base_sigma_forecast(model, validate):
+    """
+    Produces a constant sigma vector for the forecast prediction 
 
+    Inputs 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+
+    Outputs:
+    - Constant Sigma Vector
+    """
     Val_warmup, Y_validate = validate
 
     N = Y_validate.size 
@@ -119,8 +150,17 @@ def base_sigma_forecast(model, validate):
     return sigma_vec    
 
 
-# TODO Finish fix, still error in this code. 
 def upgrade_sigma_forecast(model, validate):
+    """
+    Produces a time dependent sigma vector for the forecast prediction 
+
+    Inputs 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+
+    Outputs:
+    - Time dependent Sigma Vector
+    """
 
     Val_warmup, Y_validate = validate
 
@@ -147,7 +187,18 @@ def upgrade_sigma_forecast(model, validate):
 
 
 def t_plus_1(model, validate, test, upgrade = False):
+    """
+    Given a trained model, completes prediction task of given f(t) predict f(t+1) for a series of values
 
+    Inputs: 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+    - Test: Testing data (X_warmup, Y_test)
+    - Upgrade: Boolean determining if we should use upgraded (time dependent) sigma or not
+
+    Outputs:
+    - Time dependent Sigma Vector
+    """
     if upgrade:
         sigma = upgrade_sigma_t_plus_1(model, validate)
     else:
@@ -171,7 +222,18 @@ def t_plus_1(model, validate, test, upgrade = False):
 
 
 def forecast(model, validate, test, upgrade = False):
+    """
+    Given a trained model, completes prediction task of forcasting time series data
 
+    Inputs: 
+    - Model: Trained ESN
+    - Validate: Validation training set (Val_warmup, Y_validate)
+    - Test: Testing data (X_warmup, Y_test)
+    - Upgrade: Boolean determining if we should use upgraded (time dependent) sigma or not
+
+    Outputs:
+    - Time dependent Sigma Vector
+    """
     if upgrade:
         sigma = upgrade_sigma_forecast(model, validate)
     else:
