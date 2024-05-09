@@ -347,5 +347,5 @@ def log_likelihood(Y_pred, sigma, Y_test):
 
     """
     log_likelihoods = -0.5 * np.log(2 * np.pi * sigma**2) - 0.5 * ((Y_test - Y_pred) / sigma)**2
-    log_likelihood = np.sum(log_likelihoods)
+    log_likelihood = np.sum(log_likelihoods) / Y_test.size[0]
     return log_likelihood

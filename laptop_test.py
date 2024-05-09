@@ -27,33 +27,23 @@ data_config = {
 
 # Best params for sin for t+1
 param_grid = {
-    'nodes': [10],  
+    'nodes': [100],  
     'lr': [.2],  
     'sr': [1.0],  
     'ridge': [1e-7],
-    #'ridge': [1e-6]  
 }
 
-param_grid = {
-    'nodes': [10, 100, 500],  
-    'lr': [.2, 0.5, 0.7, 1.0],  
-    #'lr': [0.5],
-    #'sr': [.8] ,
-    'sr': [.5 ,0.8, 1.0],  
-    #'ridge': [1e-7],
-    'ridge': [1e-8 ,1e-7, 1e-6]  
-}
 
 if __name__ == '__main__':
 
-    three_harmonic = partial(multi_harmonic, num_harmonics=3)
+    three_harmonic = partial(multi_harmonic, num_harmonics=5)
 
     data = generate_data(three_harmonic, noise.sine_noise, data_config)
     ((X_train, Y_train),(Val_warmup, Y_validate) ,(Warmup, Y_test)) = data
     # ! #################################### SAWTOOTH T+1 BASELINE 
     # Make new filename if running a new test
 
-    save_file = 'results/f3har_nsin_amp5_ssF_tp1_ba.pkl'
+    save_file = 'results/f5har_nsin_amp5_ssF_tp1_ba.pkl'
 
     # Create directories if they don't exist
     save_dir = os.path.dirname(save_file)
@@ -71,11 +61,120 @@ if __name__ == '__main__':
         model = grid_search_results['model']
         sigma = grid_search_results['sigma']
         print("Loaded grid search results from file.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
     except FileNotFoundError:
         print("Running grid search...")
         best_params, best_log_lik, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file, False)
         print("Grid search completed and results saved.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+        
+
+        # Make new filename if running a new test
+
+    # ! #################################### 
+    save_file = 'results/f5har_nsin_amp5_ssF_tp1_up.pkl'
+
+    # Create directories if they don't exist
+    save_dir = os.path.dirname(save_file)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # check if the saved file exists
+    try:
+        with open(save_file, 'rb') as f:
+            grid_search_results = pickle.load(f)
+        best_params = grid_search_results['best_params']
+        best_log_lik = grid_search_results['best_log_lik']
+        Y_test = grid_search_results['Y_test']
+        Y_pred = grid_search_results['Y_pred']
+        model = grid_search_results['model']
+        sigma = grid_search_results['sigma']
+        print("Loaded grid search results from file.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+    except FileNotFoundError:
+        print("Running grid search...")
+        best_params, best_log_lik, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file, False)
+        print("Grid search completed and results saved.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+    
+    # ! ############################FORECASTING######## 
+    # Best params for sin for forcasting
 
 
-print (best_params)
-plot_prediction(Warmup, Y_test, Y_pred, sigma)
+    save_file = 'results/f5har_nsin_amp5_ssF_for_ba.pkl'
+
+    # Create directories if they don't exist
+    save_dir = os.path.dirname(save_file)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # check if the saved file exists
+    try:
+        with open(save_file, 'rb') as f:
+            grid_search_results = pickle.load(f)
+        best_params = grid_search_results['best_params']
+        best_log_lik = grid_search_results['best_log_lik']
+        Y_test = grid_search_results['Y_test']
+        Y_pred = grid_search_results['Y_pred']
+        model = grid_search_results['model']
+        sigma = grid_search_results['sigma']
+        print("Loaded grid search results from file.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+    except FileNotFoundError:
+        print("Running grid search...")
+        best_params, best_log_lik, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file, False)
+        print("Grid search completed and results saved.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+        
+    # ! ############################FORECASTING######## 
+    # Best params for sin for forcasting
+
+    save_file = 'results/f5har_nsin_amp5_ssF_for_up.pkl'
+
+    # Create directories if they don't exist
+    save_dir = os.path.dirname(save_file)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # check if the saved file exists
+    try:
+        with open(save_file, 'rb') as f:
+            grid_search_results = pickle.load(f)
+        best_params = grid_search_results['best_params']
+        best_log_lik = grid_search_results['best_log_lik']
+        Y_test = grid_search_results['Y_test']
+        Y_pred = grid_search_results['Y_pred']
+        model = grid_search_results['model']
+        sigma = grid_search_results['sigma']
+        print("Loaded grid search results from file.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+    except FileNotFoundError:
+        print("Running grid search...")
+        best_params, best_log_lik, Y_test, Y_pred, model, sigma = grid_search(data, param_grid, t_plus_1, save_file, False)
+        print("Grid search completed and results saved.")
+        print (best_params)
+        print (best_log_lik)
+        plot_prediction(Warmup, Y_test, Y_pred, sigma)
+
+
+
